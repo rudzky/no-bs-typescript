@@ -1,6 +1,6 @@
-interface DataBase {
-  get(id: string): string;
-  set(id: string, value: string): void;
+interface DataBase<T, K> {
+  get(id: K): T;
+  set(id: K, value: T): void;
 }
 
 interface Persistable {
@@ -8,17 +8,22 @@ interface Persistable {
   restoreFromString(storedState: string): void;
 }
 
-class InMemoryDatabase implements DataBase {
-  protected db: Record<string, string> = {};
-  get(id: string): string {
+type DBKeyType = string | symbol | number;
+
+class InMemoryDatabase<T, K extends DBKeyType> implements DataBase<T, K> {
+  protected db: Record<K, T> = {} as Record<K, T>;
+  get(id: K): T {
     return this.db[id];
   }
-  set(id: string, value: string): void {
+  set(id: K, value: T): void {
     this.db[id] = value;
   }
 }
 
-class PersistentMemoryDB extends InMemoryDatabase implements Persistable {
+class PersistentMemoryDB<T, K extends DBKeyType>
+  extends InMemoryDatabase<T, K>
+  implements Persistable
+{
   saveToString(): string {
     return JSON.stringify(this.db);
   }
@@ -27,17 +32,17 @@ class PersistentMemoryDB extends InMemoryDatabase implements Persistable {
   }
 }
 
-const myDB = new InMemoryDatabase();
-myDB.set("name", "Pete");
-console.log(myDB.get("name"));
+const myDB = new InMemoryDatabase<number, string>();
+myDB.set("age", 22);
+console.log(myDB.get("age"));
 
-const yourDB = new PersistentMemoryDB();
-yourDB.set("surname", "Rudzky");
-console.log(yourDB.get("surname"));
+const yourDB = new PersistentMemoryDB<boolean, string>();
+yourDB.set("isStudent", false);
+console.log(yourDB.get("isStudent"));
 const copyDB = yourDB.saveToString();
-yourDB.set("surname", "Smith");
-console.log(yourDB.get("surname"));
+yourDB.set("isStudent", true);
+console.log(yourDB.get("isStudent"));
 
-const theirDB = new PersistentMemoryDB();
+const theirDB = new PersistentMemoryDB<boolean, string>();
 theirDB.restoreFromString(copyDB);
-console.log(theirDB.get("surname"));
+console.log(theirDB.get("isStudent"));
